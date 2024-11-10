@@ -61,7 +61,7 @@ public:
   PID pid_vel_;
   PID pid_ang_;
 
-  explicit Motor(MotorType type, float ratio, float out_max, uint16_t StdID, uint8_t ID, const PID& pid_vel,  const PID& pid_ang);
+  explicit Motor(MotorType type, float ratio, float out_max, uint16_t StdID, uint8_t ID, const PID& pid_vel,  const PID& pid_ang, float ref_ang);
   void CanRxMsgCallback(const uint8_t rx_data[8]);
   void Stop();
   void RCControl(float channel_data);

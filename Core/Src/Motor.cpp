@@ -13,10 +13,10 @@ float LinearMappingInt2Float(int16_t in, int16_t in_mid, int16_t in_max, float o
 
 int LinearMappingFloat2Int(float in, float in_min, float in_max, int out_min, int out_max);
 
-Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang)
+Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang, float ref_ang)
     : motor_type_(type), ratio_(ratio), stdid_(StdID), id_(ID), output_max_(output_max),
       pid_vel_(pid_vel),
-      pid_ang_(pid_ang)
+      pid_ang_(pid_ang), ref_ang_(ref_ang)
 {
   angle_ = 0.0f; 	        // deg 输出端累计转动角度
   delta_angle_ = 0.0f; 		// deg 输出端新转动的角度
@@ -28,7 +28,6 @@ Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdI
   temp_ = 0.0f;                 // 反馈电机温度
 
   ref_vel_ = 0.0f;              // 单环控制预期转速
-  ref_ang_ = 0.0f;              // 双环控制预期角度
   target_current_ = 0.0f;       // 目标输入电流
 
   stop_flag_ = false;

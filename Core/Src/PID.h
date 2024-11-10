@@ -9,9 +9,10 @@
 
 class PID {
 public:
-  PID(float kp, float ki, float kd, float i_max, float out_max);
+  PID(float kp, float ki, float kd, float kfilter_d, float i_max, float out_max);
   float calc(float ref, float fdb);
   float ref_, fdb_;
+  float kfilter_d_;
   float kp_, ki_, kd_;
   float i_max_, out_max_;
 private:
