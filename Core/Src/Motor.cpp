@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <cmath>
 
+#define pi 3.14159
+
 uint8_t tx_data[8];
 int current_tx;
 
@@ -13,14 +15,14 @@ float LinearMappingInt2Float(int16_t in, int16_t in_mid, int16_t in_max, float o
 
 int LinearMappingFloat2Int(float in, float in_min, float in_max, int out_min, int out_max);
 
-Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang, float ref_ang)
+Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang, float ref_ang, float ecd_anggle)
     : motor_type_(type), ratio_(ratio), stdid_(StdID), id_(ID), output_max_(output_max),
       pid_vel_(pid_vel),
-      pid_ang_(pid_ang), ref_ang_(ref_ang)
+      pid_ang_(pid_ang), ref_ang_(ref_ang), ecd_angle_(ecd_anggle)
 {
   angle_ = 0.0f; 	        // deg 输出端累计转动角度
   delta_angle_ = 0.0f; 		// deg 输出端新转动的角度
-  ecd_angle_ = 0.0f; 		// deg 当前电机编码器角度
+//  ecd_angle_ = 0.0f; 		// deg 当前电机编码器角度
   last_ecd_angle_ = 0.0f;	// deg 上次电机编码器角度
   delta_ecd_angle_ = 0.0f; 	// deg 编码器端新转动的角度
   rotate_speed_ = 0.0f;         // dps 反馈转子转速
@@ -31,6 +33,7 @@ Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdI
   target_current_ = 0.0f;       // 目标输入电流
 
   stop_flag_ = false;
+  forward_ = 0.0f;
 }
 
 void Motor::CanRxMsgCallback(const uint8_t rx_data[8]){
@@ -42,7 +45,6 @@ void Motor::CanRxMsgCallback(const uint8_t rx_data[8]){
   float delta = ecd_angle_ - last_ecd_angle_;
   // 编码器变化角度过零点修正
   if (delta < -180.0) delta_ecd_angle_ = delta + 360.0;
-
   else if (delta > 180.0) delta_ecd_angle_ = delta - 360.0;
   else delta_ecd_angle_ = delta;
 
@@ -61,8 +63,9 @@ void Motor::CanRxMsgCallback(const uint8_t rx_data[8]){
 
 void Motor::CalculatePID(){
   if (!stop_flag_){
+    forward_ = 0.387 * (1 - (ref_ang_ / 180 * pi + pi / 10) * (ref_ang_ / 180 * pi + pi / 10));
     ref_vel_ = pid_ang_.calc(ref_ang_, angle_);
-    target_current_ = pid_vel_.calc(ref_vel_, rotate_speed_);
+    target_current_ = pid_vel_.calc(ref_vel_, rotate_speed_) + forward_;
   }
   else target_current_= 0.0;
 }
