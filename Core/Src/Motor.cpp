@@ -10,6 +10,7 @@
 
 uint8_t tx_data[8];
 int current_tx;
+float max_angle = -18.0f;
 
 float LinearMappingInt2Float(int16_t in, int16_t in_mid, int16_t in_max, float out_mid, float out_max);
 
@@ -63,7 +64,8 @@ void Motor::CanRxMsgCallback(const uint8_t rx_data[8]){
 
 void Motor::CalculatePID(){
   if (!stop_flag_){
-    forward_ = 0.387 * (1 - (ref_ang_ / 180 * pi + pi / 10) * (ref_ang_ / 180 * pi + pi / 10));
+//    forward_ = 0.387 * (1 - pow((ref_ang_ / 180 * pi - max_angle / 180 * pi), 2) / 2);
+    forward_ = 0;
     ref_vel_ = pid_ang_.calc(ref_ang_, angle_);
     target_current_ = pid_vel_.calc(ref_vel_, rotate_speed_) + forward_;
   }
@@ -72,7 +74,12 @@ void Motor::CalculatePID(){
 
 void Motor::Handle() {
 //  uint8_t tx_data[8];
-  current_tx = LinearMappingFloat2Int(target_current_, -output_max_, output_max_, -16384, 16384);
+  if(stdid_ != GM6020_StdID_CONTROL_VOLTAGE1 && stdid_ != GM6020_StdID_CONTROL_VOLTAGE2){
+    current_tx = LinearMappingFloat2Int(target_current_, -output_max_, output_max_, -16384, 16384);
+  }
+  else{
+    current_tx = LinearMappingFloat2Int(target_current_, -output_max_, output_max_, -25000, 25000);
+  }
   if(id_ < 0x05){
     tx_data[2 * id_ - 1] = current_tx;
     tx_data[2 * id_ - 2] = current_tx >> 8;
