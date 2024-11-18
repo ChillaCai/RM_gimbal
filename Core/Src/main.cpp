@@ -26,6 +26,7 @@
 #include "gpio.h"
 #include "RC.h"
 #include "IMU.h"
+#include "SPI.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -63,6 +64,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 extern RC rc;
 extern IMU imu;
+
 uint8_t rx_acc_data[6];
 uint8_t rx_gyro_data[6];
 /* USER CODE END 0 */
@@ -97,13 +99,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  //MX_IWDG_Init();
+  MX_IWDG_Init();
   MX_TIM6_Init();
   MX_USART3_UART_Init();
   MX_CAN1_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
-  // BMI088_Init();    // 需要在HAL_TIM_Base_Start_IT之前
+  BMI088_Init();    // 需要在HAL_TIM_Base_Start_IT之前
 
   __HAL_UART_ENABLE_IT(&huart3,UART_IT_IDLE);
   HAL_TIM_Base_Start_IT(&htim6);

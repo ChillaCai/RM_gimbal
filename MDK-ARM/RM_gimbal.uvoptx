@@ -160,6 +160,36 @@
           <WinNumber>1</WinNumber>
           <ItemText>\\RM_gimbal\../Core/Src/Controller.cpp\pitch_motor.ref_ang_</ItemText>
         </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>imu</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>rx_acc_data</ItemText>
+        </Ww>
+        <Ww>
+          <count>4</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>rx_acc_range_raw</ItemText>
+        </Ww>
+        <Ww>
+          <count>5</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>rx_acc_range_k</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>rx_gyro_range_k</ItemText>
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>rx_gyro_range_raw</ItemText>
+        </Ww>
       </WatchWindow1>
       <WatchWindow2>
         <Ww>

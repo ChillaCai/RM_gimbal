@@ -32,8 +32,8 @@ Motor yaw_motor(Motor::GM6020, GM6020_RATIO, GM6020_MAXCURRENT, yaw_motor_contro
                 PID(0,0,0,0,0,GM6020_MAXCURRENT),
                 PID(0,0,0,0,0,0),0 , 0);
 Motor pitch_motor(Motor::GM6020, GM6020_RATIO, GM6020_MAXCURRENT,pitch_motor_control_stdid,PITCH_MOTOR_ID,
-                  PID(0.004,0,0,0,0,GM6020_MAXCURRENT),
-                  PID(60,3,200,0.2,15,600),0 , 217.36174);
+                  PID(0.0045,0,0,0,0,GM6020_MAXCURRENT),
+                  PID(45,1.2,200,0.2,25,600),0 , 217.36174);
 Motor shooter_motor1(Motor::M3508, M3508_RATIO, M3508_MAXCURRENT,shooter1_control_stdid,SHOOTER1_MOTOR_ID,
                      PID(0,0,0,0,0,M3508_MAXCURRENT),
                      PID(0,0,0,0,0,0),0 ,0);
@@ -78,7 +78,6 @@ void RCHandle(){
 // todo
 void IMUHandle(){
     imu.IMUCalculate();
-
     pitch_motor.SetIMUAngle(imu.IMUPitch());
 }
 
