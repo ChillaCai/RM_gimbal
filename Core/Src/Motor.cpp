@@ -4,22 +4,20 @@
 
 #include "Motor.h"
 #include <cstdint>
-#include <cmath>
 
 #define pi 3.14159
 
 uint8_t tx_data[8];
 int current_tx;
-float max_angle = -18.0f;
 
 float LinearMappingInt2Float(int16_t in, int16_t in_mid, int16_t in_max, float out_mid, float out_max);
 
 int LinearMappingFloat2Int(float in, float in_min, float in_max, int out_min, int out_max);
 
-Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang, float ref_ang, float ecd_anggle)
+Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang, bool is_imu_fdb, float ecd_angle)
     : motor_type_(type), ratio_(ratio), stdid_(StdID), id_(ID), output_max_(output_max),
       pid_vel_(pid_vel),
-      pid_ang_(pid_ang), ref_ang_(ref_ang), ecd_angle_(ecd_anggle)
+      pid_ang_(pid_ang), ecd_angle_(ecd_angle), is_imu_fdb_(is_imu_fdb)
 {
   angle_ = 0.0f; 	        // deg 输出端累计转动角度
   delta_angle_ = 0.0f; 		// deg 输出端新转动的角度
@@ -33,8 +31,11 @@ Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdI
   ref_vel_ = 0.0f;              // 单环控制预期转速
   target_current_ = 0.0f;       // 目标输入电流
 
+  angle_imu_ = 0.0f;
+
   stop_flag_ = false;
-  forward_ = 0.0f;
+  forward_current_ = 0.0f;
+  forward_voltage_ = 0.0f;
 }
 
 void Motor::CanRxMsgCallback(const uint8_t rx_data[8]){
@@ -64,22 +65,28 @@ void Motor::CanRxMsgCallback(const uint8_t rx_data[8]){
 
 void Motor::CalculatePID(){
   if (!stop_flag_){
-//    forward_ = 0.387 * (1 - pow((ref_ang_ / 180 * pi - max_angle / 180 * pi), 2) / 2);
-    forward_ = 0;
-    ref_vel_ = pid_ang_.calc(ref_ang_, angle_);
-    target_current_ = pid_vel_.calc(ref_vel_, rotate_speed_) + forward_;
+    if(is_imu_fdb_){
+      ref_vel_ = pid_ang_.calc(ref_ang_, angle_imu_);
+    }
+    else{
+      ref_vel_ = pid_ang_.calc(ref_ang_, angle_);
+    }
+    target_current_ = pid_vel_.calc(ref_vel_, rotate_speed_);
   }
   else target_current_= 0.0;
+
+  forward_current_ = 0.0f;
+  forward_voltage_ = -0.0049 * angle_ + 0.0136;
+
+  if(stdid_ == GM6020_StdID_CONTROL_VOLTAGE1 | stdid_ == GM6020_StdID_CONTROL_VOLTAGE2){
+    current_tx = LinearMappingFloat2Int(target_current_ + forward_voltage_, -output_max_, output_max_, -25000, 25000);
+  }
+  else{
+    current_tx = LinearMappingFloat2Int(target_current_ + forward_current_, -output_max_, output_max_, -16384, 16384);
+  }
 }
 
 void Motor::Handle() {
-//  uint8_t tx_data[8];
-  if(stdid_ != GM6020_StdID_CONTROL_VOLTAGE1 && stdid_ != GM6020_StdID_CONTROL_VOLTAGE2){
-    current_tx = LinearMappingFloat2Int(target_current_, -output_max_, output_max_, -16384, 16384);
-  }
-  else{
-    current_tx = LinearMappingFloat2Int(target_current_, -output_max_, output_max_, -25000, 25000);
-  }
   if(id_ < 0x05){
     tx_data[2 * id_ - 1] = current_tx;
     tx_data[2 * id_ - 2] = current_tx >> 8;
@@ -89,14 +96,18 @@ void Motor::Handle() {
     tx_data[2 * (id_ - 4) - 2] = current_tx >> 8;
   }
 
-
   CAN_TxHeaderTypeDef TxHeader = {(uint16_t)(stdid_), 0, CAN_ID_STD, CAN_RTR_DATA, 8, DISABLE};
 
   HAL_CAN_AddTxMessage(&hcan1, &TxHeader, tx_data, CAN_FilterFIFO0);
 }
 
 void Motor::Stop(){ stop_flag_ = true;}
+
 void Motor::RCControl(float channel_data) {
   stop_flag_ = false;
   ref_ang_ += channel_data;
+}
+
+void Motor::SetIMUAngle(float angle) {
+  angle_imu_ = angle;
 }
