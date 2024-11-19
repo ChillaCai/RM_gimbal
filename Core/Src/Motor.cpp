@@ -7,21 +7,21 @@
 
 #define pi 3.14159
 
-uint8_t tx_data[8];
-int current_tx;
+uint8_t tx_data1[8];
+uint8_t tx_data2[8];
 
 float LinearMappingInt2Float(int16_t in, int16_t in_mid, int16_t in_max, float out_mid, float out_max);
 
 int LinearMappingFloat2Int(float in, float in_min, float in_max, int out_min, int out_max);
 
-Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang, bool is_imu_fdb, float ecd_angle)
-    : motor_type_(type), ratio_(ratio), stdid_(StdID), id_(ID), output_max_(output_max),
+Motor::Motor(Motor::MotorType type, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang, bool is_imu_fdb, float ecd_angle, float (*feed_forward)(float angle_imu))
+    : motor_type_(type), control_stdid_(StdID), id_(ID),
       pid_vel_(pid_vel),
-      pid_ang_(pid_ang), ecd_angle_(ecd_angle), is_imu_fdb_(is_imu_fdb)
+      pid_ang_(pid_ang), ecd_angle_(ecd_angle), is_imu_fdb_(is_imu_fdb),
+      FeedForward(feed_forward)
 {
   angle_ = 0.0f; 	        // deg 输出端累计转动角度
   delta_angle_ = 0.0f; 		// deg 输出端新转动的角度
-//  ecd_angle_ = 0.0f; 		// deg 当前电机编码器角度
   last_ecd_angle_ = 0.0f;	// deg 上次电机编码器角度
   delta_ecd_angle_ = 0.0f; 	// deg 编码器端新转动的角度
   rotate_speed_ = 0.0f;         // dps 反馈转子转速
@@ -36,6 +36,19 @@ Motor::Motor(Motor::MotorType type, float ratio, float output_max, uint16_t StdI
   stop_flag_ = false;
   forward_current_ = 0.0f;
   forward_voltage_ = 0.0f;
+
+  if(type == GM6020){
+    ratio_ = GM6020_RATIO;
+    output_max_ = GM6020_MAXCURRENT;
+  }
+  else if(type == M3508){
+    ratio_ = M3508_RATIO;
+    output_max_ = M3508_MAXCURRENT;
+  }
+  else if(type == M2006){
+    ratio_ = M2006_RATIO;
+    output_max_ = M2006_MAXCURRENT;
+  }
 }
 
 void Motor::CanRxMsgCallback(const uint8_t rx_data[8]){
@@ -67,38 +80,37 @@ void Motor::CalculatePID(){
   if (!stop_flag_){
     if(is_imu_fdb_){
       ref_vel_ = pid_ang_.calc(ref_ang_, angle_imu_);
+      forward_voltage_ = FeedForward(angle_imu_);
+      forward_current_ = FeedForward(angle_imu_);
     }
     else{
       ref_vel_ = pid_ang_.calc(ref_ang_, angle_);
+      forward_voltage_ = FeedForward(angle_);
+      forward_current_ = FeedForward(angle_imu_);
     }
     target_current_ = pid_vel_.calc(ref_vel_, rotate_speed_);
   }
   else target_current_= 0.0;
 
-  forward_current_ = 0.0f;
-  forward_voltage_ = -0.0049 * angle_ + 0.0136;
+//  error_acc_gyro = angle_ - angle_imu_;
 
-  if(stdid_ == GM6020_StdID_CONTROL_VOLTAGE1 | stdid_ == GM6020_StdID_CONTROL_VOLTAGE2){
-    current_tx = LinearMappingFloat2Int(target_current_ + forward_voltage_, -output_max_, output_max_, -25000, 25000);
+  if(control_stdid_ == GM6020_StdID_CONTROL_VOLTAGE1 | control_stdid_ == GM6020_StdID_CONTROL_VOLTAGE2){
+    current_tx_ = LinearMappingFloat2Int(target_current_ + forward_voltage_, -output_max_, output_max_, -25000, 25000);
   }
   else{
-    current_tx = LinearMappingFloat2Int(target_current_ + forward_current_, -output_max_, output_max_, -16384, 16384);
+    current_tx_ = LinearMappingFloat2Int(target_current_ + forward_current_, -output_max_, output_max_, -16384, 16384);
   }
 }
 
 void Motor::Handle() {
   if(id_ < 0x05){
-    tx_data[2 * id_ - 1] = current_tx;
-    tx_data[2 * id_ - 2] = current_tx >> 8;
+    tx_data1[2 * id_ - 1] = current_tx_;
+    tx_data1[2 * id_ - 2] = current_tx_ >> 8;
   }
   else{
-    tx_data[2 * (id_ - 4) - 1] = current_tx;
-    tx_data[2 * (id_ - 4) - 2] = current_tx >> 8;
+    tx_data2[2 * (id_ - 4) - 1] = current_tx_;
+    tx_data2[2 * (id_ - 4) - 2] = current_tx_ >> 8;
   }
-
-  CAN_TxHeaderTypeDef TxHeader = {(uint16_t)(stdid_), 0, CAN_ID_STD, CAN_RTR_DATA, 8, DISABLE};
-
-  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, tx_data, CAN_FilterFIFO0);
 }
 
 void Motor::Stop(){ stop_flag_ = true;}

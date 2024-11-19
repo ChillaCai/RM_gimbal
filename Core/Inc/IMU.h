@@ -23,10 +23,6 @@ private:
   float pitch_acc_;
   float roll_acc_;
 
-  float yaw_;
-  float pitch_;
-  float roll_;
-
   float K;
 
 public:
@@ -36,9 +32,9 @@ public:
   void GyroCalculate();
   void IMUCalculate();
 
-  float IMUYaw(){return yaw_;}
-  float IMUPitch(){return pitch_;}
-  float IMURoll(){return roll_;}
+  float IMUYaw(){return yaw_gyro_;}
+  float IMUPitch(){return pitch_gyro_;}
+  float IMURoll(){return roll_gyro_;}
 };
 
 void BMI088_Init();

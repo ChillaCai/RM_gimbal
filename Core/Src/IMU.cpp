@@ -165,9 +165,9 @@ void IMU::IMUCalculate() {
   roll_acc_ = atan2(acc_y_, acc_z_) * 180. / 3.1415 ;
   pitch_acc_ = -atan2(acc_x_, sqrt(acc_y_ * acc_y_ + acc_z_ * acc_z_)) * 180. / 3.1415;
 
-  float roll_rad = roll_ * 3.1415 / 180;
-  float pitch_rad = pitch_ * 3.1415 / 180;
-  float yaw_rad = yaw_ * 3.1415 / 180;
+  float roll_rad = roll_gyro_ * 3.1415 / 180;
+  float pitch_rad = pitch_gyro_ * 3.1415 / 180;
+  float yaw_rad = yaw_gyro_ * 3.1415 / 180;
   float dot_yaw_gyro = sin(roll_rad) / cos(pitch_rad) * gyro_y_ + cos(roll_rad) / cos(pitch_rad) * gyro_z_;
   float dot_roll_gyro = gyro_x_ + sin(pitch_rad) * sin(roll_rad) / cos(pitch_rad) * gyro_y_ + cos(roll_rad) * sin(pitch_rad) / cos(pitch_rad) * gyro_z_;
   float dot_pitch_gyro = cos(roll_rad) * gyro_y_ - sin(roll_rad) * gyro_z_;

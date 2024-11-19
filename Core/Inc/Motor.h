@@ -29,6 +29,11 @@
 #define M3508_MAXCURRENT 20.0
 #define M2006_MAXCURRENT 10.0
 
+#define YAW_MOTOR_ID 0x03
+#define PITCH_MOTOR_ID 0x04
+#define SHOOTER1_MOTOR_ID 0x01
+#define SHOOTER2_MOTOR_ID 0x01
+
 class Motor {
 private:
 
@@ -42,6 +47,8 @@ private:
   int16_t torque_;                // 反馈转矩
   int16_t temp_;                  // °C 反馈电机温度
 
+  int current_tx_;
+
   float ref_vel_;               // 单环控制预期速度
   float ref_ang_;               // 双环控制预期角度
   float target_current_;        // 目标输入电流
@@ -49,7 +56,7 @@ private:
 
   float angle_imu_;             // imu解算角度
 
-  uint16_t stdid_;
+  uint16_t control_stdid_;
   uint8_t id_;
 
   bool stop_flag_;
@@ -65,12 +72,15 @@ public:
   float forward_current_;
   float forward_voltage_;
 
-  explicit Motor(MotorType type, float ratio, float out_max, uint16_t StdID, uint8_t ID, const PID& pid_vel,  const PID& pid_ang, bool is_imu_fdb, float ecd_angle);
+  explicit Motor(MotorType type, uint16_t StdID, uint8_t ID,const PID& pid_vel,  const PID& pid_ang,
+                 bool is_imu_fdb, float ecd_angle, float (*feed_forward)(float angle_imu));
   void CanRxMsgCallback(const uint8_t rx_data[8]);
   void Stop();
   void RCControl(float channel_data);
   void CalculatePID();
   void Handle();
+
+  float (*FeedForward)(float angle_imu_);
 
   void SetIMUAngle(float angle);
 };
