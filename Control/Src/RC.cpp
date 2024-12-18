@@ -2,7 +2,7 @@
 // Created by chill on 2024/11/9.
 //
 
-#include "RC.h"
+#include "../Inc/RC.h"
 
 float LinearMappingInt2Float(int16_t in, int16_t in_mid, int16_t in_max, float out_mid, float out_max);
 

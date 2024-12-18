@@ -18,15 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "../../Control/Inc/IMU.h"
+#include "../../Control/Inc/RC.h"
+#include "SPI.h"
 #include "can.h"
 #include "dma.h"
+#include "gpio.h"
 #include "iwdg.h"
 #include "tim.h"
 #include "usart.h"
-#include "gpio.h"
-#include "RC.h"
-#include "IMU.h"
-#include "SPI.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -74,7 +74,8 @@ uint8_t rx_gyro_data[6];
   * @retval int
   */
 int main(void)
-	{
+
+{
 
   /* USER CODE BEGIN 1 */
 
@@ -108,7 +109,6 @@ int main(void)
 
   BMI088_Init();    // 需要在HAL_TIM_Base_Start_IT之前
 
-  __HAL_UART_ENABLE_IT(&huart3,UART_IT_IDLE);
   HAL_TIM_Base_Start_IT(&htim6);
 
   CAN_FilterTypeDef FilterConfig = {0, 0, 0, 0, CAN_FilterFIFO0, 14, CAN_FILTERMODE_IDMASK, CAN_FILTERSCALE_32BIT, ENABLE};
@@ -116,6 +116,7 @@ int main(void)
   HAL_CAN_Start(&hcan1);
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
+  __HAL_UART_ENABLE_IT(&huart3,UART_IT_IDLE);
   rc.ReadDbus();
   /* USER CODE END 2 */
 

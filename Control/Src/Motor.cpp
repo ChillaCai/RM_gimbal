@@ -2,7 +2,7 @@
 // Created by chill on 2024/11/9.
 //
 
-#include "Motor.h"
+#include "../Inc/Motor.h"
 #include <cstdint>
 
 #define pi 3.14159
@@ -14,10 +14,11 @@ float LinearMappingInt2Float(int16_t in, int16_t in_mid, int16_t in_max, float o
 
 int LinearMappingFloat2Int(float in, float in_min, float in_max, int out_min, int out_max);
 
-Motor::Motor(Motor::MotorType type, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang, bool is_imu_fdb, float ecd_angle, float (*feed_forward)(float angle_imu))
+Motor::Motor(Motor::MotorType type, uint16_t StdID, uint8_t ID, const PID& pid_vel, const PID& pid_ang,
+             bool is_imu_fdb, float ecd_angle, float (*feed_forward)(float angle_imu), bool is_single_pid)
     : motor_type_(type), control_stdid_(StdID), id_(ID),
       pid_vel_(pid_vel),
-      pid_ang_(pid_ang), ecd_angle_(ecd_angle), is_imu_fdb_(is_imu_fdb),
+      pid_ang_(pid_ang), ecd_angle_(ecd_angle), is_imu_fdb_(is_imu_fdb), is_single_pid_(is_single_pid),
       FeedForward(feed_forward)
 {
   angle_ = 0.0f; 	        // deg 输出端累计转动角度
@@ -73,7 +74,8 @@ void Motor::CanRxMsgCallback(const uint8_t rx_data[8]){
 
   if (motor_type_ == M3508 | motor_type_ == GM6020) temp_ = (int16_t)rx_data[6];
 
-  CalculatePID();
+  if(is_single_pid_) CalculateSinglePID();
+  else CalculatePID();
 }
 
 void Motor::CalculatePID(){
@@ -102,6 +104,20 @@ void Motor::CalculatePID(){
   }
 }
 
+void Motor::CalculateSinglePID(){
+  if (!stop_flag_){
+    target_current_ = pid_vel_.calc(ref_vel_, rotate_speed_);
+  }
+  else target_current_= 0.0;
+
+  if(control_stdid_ == GM6020_StdID_CONTROL_VOLTAGE1 | control_stdid_ == GM6020_StdID_CONTROL_VOLTAGE2){
+    current_tx_ = LinearMappingFloat2Int(target_current_, -output_max_, output_max_, -25000, 25000);
+  }
+  else{
+    current_tx_ = LinearMappingFloat2Int(target_current_, -output_max_, output_max_, -16384, 16384);
+  }
+}
+
 void Motor::Handle() {
   if(id_ < 0x05){
     tx_data1[2 * id_ - 1] = current_tx_;
@@ -117,7 +133,7 @@ void Motor::Stop(){ stop_flag_ = true;}
 
 void Motor::RCControl(float channel_data) {
   stop_flag_ = false;
-  ref_ang_ += channel_data;
+  ref_vel_ = channel_data;
 }
 
 void Motor::SetIMUAngle(float angle) {

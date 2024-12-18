@@ -37,11 +37,5 @@ public:
   float IMURoll(){return roll_gyro_;}
 };
 
-void BMI088_Init();
-
-void BMI088_gyro_read_reg(uint8_t reg, uint8_t *return_data, uint8_t length);
-void BMI088_accel_read_reg(uint8_t reg, uint8_t *return_data, uint8_t length);
-void BMI088_accel_write_single_reg(uint8_t reg, uint8_t data);
-
 
 #endif // RM_GIMBAL_IMU_H

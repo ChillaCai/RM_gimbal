@@ -22,15 +22,15 @@
 #define M2006_StdID_CONTROL2 0x1FF
 
 #define GM6020_RATIO 1.0
-#define M3508_RATIO 36.0
-#define M2006_RATIO 19.0
+#define M2006_RATIO 36.0
+#define M3508_RATIO 19.0
 
 #define GM6020_MAXCURRENT 3.0
 #define M3508_MAXCURRENT 20.0
 #define M2006_MAXCURRENT 10.0
 
 #define YAW_MOTOR_ID 0x03
-#define PITCH_MOTOR_ID 0x04
+#define PITCH_MOTOR_ID 0x01
 #define SHOOTER1_MOTOR_ID 0x01
 #define SHOOTER2_MOTOR_ID 0x01
 
@@ -61,6 +61,7 @@ private:
 
   bool stop_flag_;
   bool is_imu_fdb_;
+  bool is_single_pid_;
 
 public:
   enum MotorType{
@@ -73,11 +74,12 @@ public:
   float forward_voltage_;
 
   explicit Motor(MotorType type, uint16_t StdID, uint8_t ID,const PID& pid_vel,  const PID& pid_ang,
-                 bool is_imu_fdb, float ecd_angle, float (*feed_forward)(float angle_imu));
+                 bool is_imu_fdb, float ecd_angle, float (*feed_forward)(float angle_imu), bool is_single_pid);
   void CanRxMsgCallback(const uint8_t rx_data[8]);
   void Stop();
   void RCControl(float channel_data);
   void CalculatePID();
+  void CalculateSinglePID();
   void Handle();
 
   float (*FeedForward)(float angle_imu_);

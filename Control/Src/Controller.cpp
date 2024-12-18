@@ -1,13 +1,15 @@
+
+
 //
 // Created by chill on 2024/11/9.
 //
 
 #include "iwdg.h"
 
+#include "../Inc/IMU.h"
+#include "../Inc/Motor.h"
+#include "../Inc/RC.h"
 #include "tim.h"
-#include "RC.h"
-#include "Motor.h"
-#include "IMU.h"
 
 // todo
 uint16_t yaw_motor_control_stdid = GM6020_StdID_CONTROL_VOLTAGE1;
@@ -29,16 +31,16 @@ float PitchFeedForward(float angle_imu){
 
 Motor yaw_motor(Motor::GM6020, yaw_motor_control_stdid, YAW_MOTOR_ID,
                 PID(0.006,0,0,0,0,GM6020_MAXCURRENT),
-                PID(50,1.5, 380,0.2,10,600), true ,0, &YawFeedForward);
+                PID(50,1.5, 380,0.2,10,600), false ,0, &YawFeedForward, true);
 // ecd作为fdb
-//Motor pitch_motor(Motor::GM6020, GM6020_RATIO, GM6020_MAXCURRENT,pitch_motor_control_stdid,PITCH_MOTOR_ID,
-//                  PID(0.0045,0,0,0,0,GM6020_MAXCURRENT),
-//                  PID(45,1.2,200,0.2,25,600),1 , 217.36174);
-
-// imu作为fbd
 Motor pitch_motor(Motor::GM6020, pitch_motor_control_stdid,PITCH_MOTOR_ID,
                   PID(0.0045,0,0,0,0,GM6020_MAXCURRENT),
-                  PID(50,1.2,200,0.2,50,600),true , 217.36174, &PitchFeedForward);
+                  PID(90,1.2,200,0.2,25,600), false , (217.36174 + 43.), &PitchFeedForward, false);
+
+// imu作为fbd
+//Motor pitch_motor(Motor::GM6020, pitch_motor_control_stdid,PITCH_MOTOR_ID,
+//                  PID(0.0045,0,0,0,0,GM6020_MAXCURRENT),
+//                  PID(50,1.2,200,0.2,50,600), true, 217.36174, &PitchFeedForward);
 
 //Motor shooter_motor1(Motor::M3508, shooter1_control_stdid,SHOOTER1_MOTOR_ID,
 //                     PID(0,0,0,0,0,M3508_MAXCURRENT),
@@ -76,20 +78,24 @@ void MotorHandle(){
 }
 
 // todo
+
+float yaw_gain_ = 1;
+float target_yaw_speed = 0.001;
+
 void RCHandle(){
   // 右下关闭所有电机
-//  if(rc.switch_.r == RC::DOWN){
-//    yaw_motor.Stop();
-//    pitch_motor.Stop();
+  if(rc.switch_.r == RC::DOWN){
+    yaw_motor.Stop();
+    pitch_motor.Stop();
 //    shooter_motor1.Stop();
 //    shooter_motor2.Stop();
-//  }
+  }
   // 右中/上控制电机 左拨杆上下pitch，左右yaw
-//  else{
-    yaw_motor.RCControl(rc.yaw_gain_ * rc.channel_.l_row);
-    pitch_motor.RCControl(rc.pitch_gain_ * rc.channel_.l_col);
-//  }
-    // todo 若要用遥控器控制：软件限位
+  else{
+    yaw_motor.RCControl(yaw_gain_ * target_yaw_speed);
+//    pitch_motor.RCControl(rc.pitch_gain_ * rc.channel_.l_col);
+  }
+  // todo 若要用遥控器控制：软件限位
 }
 
 void IMUHandle(){
