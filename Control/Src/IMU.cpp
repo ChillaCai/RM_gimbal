@@ -3,7 +3,7 @@
 //
 
 #include "../Inc/IMU.h"
-#include "BMI088.h"
+#include "../Inc/BMI088.h"
 #include <cmath>
 
 #define g 9.81

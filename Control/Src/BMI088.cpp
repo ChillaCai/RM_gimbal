@@ -2,7 +2,7 @@
 // Created by chill on 2024/12/18.
 //
 
-#include "BMI088.h"
+#include "../Inc/BMI088.h"
 #include "spi.h"
 // 片选
 void BMI088_ACCEL_NS_L(void)

@@ -27,6 +27,7 @@
 #include "iwdg.h"
 #include "tim.h"
 #include "usart.h"
+#include "../../Control/Inc/BMI088.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -68,6 +69,7 @@ extern IMU imu;
 uint8_t rx_acc_data[6];
 uint8_t rx_gyro_data[6];
 /* USER CODE END 0 */
+
 
 /**
   * @brief  The application entry point.

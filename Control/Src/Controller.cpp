@@ -56,6 +56,10 @@ void MotorHandle();
 
 CAN_RxHeaderTypeDef rx_header;
 
+float turn_speed = 1000.f;
+float target_yaw_speed = 100.f;
+float delta_yaw_speed = 0.5f;
+
 void ControlLoop(){
   HAL_IWDG_Refresh(&hiwdg);
   // 将rc的 add_on量加给 target
@@ -64,6 +68,11 @@ void ControlLoop(){
   IMUHandle();
   // can 控制电机
   MotorHandle();
+
+  if (target_yaw_speed > turn_speed) delta_yaw_speed = -0.5f;
+  else if (target_yaw_speed < -turn_speed) delta_yaw_speed = 0.5f;
+
+  target_yaw_speed += delta_yaw_speed;
 }
 
 void MotorHandle(){
@@ -80,7 +89,6 @@ void MotorHandle(){
 // todo
 
 float yaw_gain_ = 1;
-float target_yaw_speed = 0.001;
 
 void RCHandle(){
   // 右下关闭所有电机
